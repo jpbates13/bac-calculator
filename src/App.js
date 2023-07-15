@@ -1,23 +1,24 @@
-import logo from './logo.svg';
-import './App.css';
+import logo from "./logo.svg";
+import "./App.css";
+import { useState } from "react";
+import { AuthProvider } from "./contexts/AuthContext";
+import Login from "./components/auth/Login";
+import Signup from "./components/auth/Signup";
+import Profile from "./components/auth/Profile";
+import { Route, Routes } from "react-router";
+import BACCalc from "./components/Private/BACCalc";
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<BACCalc />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/dashboard" element={<Profile />} />
+        </Routes>
+      </AuthProvider>
     </div>
   );
 }
