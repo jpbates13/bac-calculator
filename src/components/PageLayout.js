@@ -33,11 +33,6 @@ export default function PageLayout(props) {
       <div class="container page-content">
         <div class="header page-header">
           <div class="header-content">
-            <a href="/" style={{ textDecoration: "none" }}>
-              <div class="pageTitle">
-                <h1>Realtime BAC Calculator</h1>
-              </div>
-            </a>
             {error && <p>error</p>}
             {currentUser && (
               <div>

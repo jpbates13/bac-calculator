@@ -5,12 +5,17 @@ import { useEffect } from "react";
 import { getDoc, setDoc, doc } from "firebase/firestore";
 import db from "../../firebase";
 import { Button } from "react-bootstrap";
+import CountUp from "react-countup";
 
 function BACCalc() {
   const [drinks, setDrinks] = useState([]);
   const [bac, setBac] = useState(0);
   const { currentUser, logout } = useAuth();
   const [userFields, setUserFields] = useState();
+  const [loading, setLoading] = useState(false);
+  const [updateBAC, setUpdateBAC] = useState(true);
+  const [countStart, setCountStart] = useState(0);
+  const [countEnd, setCountEnd] = useState(0);
 
   useEffect(() => {
     const userDocRef = doc(db, "userCollection", currentUser.uid);
@@ -53,45 +58,59 @@ function BACCalc() {
     });
   };
 
-  const addDrink = (e) => {
+  const addDrink = async (e) => {
+    setLoading(true);
     const newDrinks = [...drinks, Date.now()];
-
     const docRef = doc(db, "drinkCollection", currentUser.uid);
-    getDoc(docRef).then((result) => {
-      if (result.exists()) {
-        setDoc(docRef, { ...result.data(), currentDrinks: newDrinks }).then(
-          () => {
-            setDrinks(newDrinks);
-            calculateBAC(newDrinks, userFields);
-          }
-        );
-      } else {
-        // doc.data() will be undefined in this case
-        console.log("No such document!");
-      }
-    });
+    await getDoc(docRef)
+      .then(async (result) => {
+        if (result.exists()) {
+          await setDoc(docRef, {
+            ...result.data(),
+            currentDrinks: newDrinks,
+          }).then(async () => {
+            await setDrinks(newDrinks);
+            await calculateBAC(newDrinks, userFields);
+          });
+        } else {
+          // doc.data() will be undefined in this case
+          console.log("No such document!");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to submit drink!");
+      });
+    setLoading(false);
   };
 
-  const removeDrink = (e) => {
+  const removeDrink = async (e) => {
+    setLoading(true);
     const newDrinks = drinks;
     newDrinks.pop();
     const docRef = doc(db, "drinkCollection", currentUser.uid);
-    getDoc(docRef).then((result) => {
-      if (result.exists()) {
-        setDoc(docRef, { ...result.data(), currentDrinks: newDrinks }).then(
-          () => {
-            setDrinks(newDrinks);
-            calculateBAC(newDrinks, userFields);
-          }
-        );
-      } else {
-        // doc.data() will be undefined in this case
-        console.log("No such document!");
-      }
-    });
+    await getDoc(docRef)
+      .then(async (result) => {
+        if (result.exists()) {
+          await setDoc(docRef, {
+            ...result.data(),
+            currentDrinks: newDrinks,
+          }).then(async () => {
+            await setDrinks(newDrinks);
+            await calculateBAC(newDrinks, userFields);
+          });
+        } else {
+          // doc.data() will be undefined in this case
+          console.log("No such document!");
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to submit drink!");
+      });
+    setLoading(false);
   };
 
   const calculateBAC = (drinkArr, userData) => {
+    const originalBAC = bac;
     if (drinkArr.length == 0) {
       setBac(0);
       return;
@@ -107,6 +126,7 @@ function BACCalc() {
       0.015 * hoursSince;
 
     setBac(newBac);
+    setCountStart(originalBAC, setCountEnd(newBac, setUpdateBAC(true)));
 
     // All the alcohol has metabolized
     if (newBac <= 0) {
@@ -116,26 +136,51 @@ function BACCalc() {
 
   return (
     <div className="App">
-      <Button onClick={removeDrink} size={"lg"}>
-        -
-      </Button>{" "}
-      <Button onClick={addDrink} size={"lg"}>
-        +
-      </Button>
+      {updateBAC ? (
+        <CountUp
+          start={countStart}
+          end={countEnd}
+          duration={2.75}
+          separator=" "
+          decimals={3}
+          decimal="."
+          suffix="%"
+          onEnd={() => setUpdateBAC(false)}
+          onStart={() => console.log("Started! 💨")}
+        >
+          {({ countUpRef, start }) => (
+            <>
+              <div style={{ fontSize: "7em" }}>
+                <span ref={countUpRef} />
+              </div>
+            </>
+          )}
+        </CountUp>
+      ) : (
+        <>
+          <div style={{ fontSize: "7em" }}>{bac.toFixed(3)}%</div>
+        </>
+      )}
+      <div>Estimated BAC</div>
       <br />
-      <p></p>
       <Button
         onClick={(e) => {
           calculateBAC(drinks, userFields);
         }}
-        disabled={drinks.length == 0}
+        disabled={drinks.length == 0 || loading}
         size={"sm"}
       >
         Refresh
       </Button>
-      <p></p>
-      <p>Estimated BAC: {bac.toFixed(3)}%</p>
-      <p>Number of drinks in this session: {drinks.length}</p>
+      <div style={{ fontSize: "7em" }}>{drinks.length}</div>
+      <p>drinks since last sober</p>
+      <br></br>
+      <Button onClick={removeDrink} size={"lg"} disabled={loading}>
+        <div style={{ fontSize: "1em" }}>Remove Drink</div>
+      </Button>{" "}
+      <Button onClick={addDrink} size={"lg"} disabled={loading}>
+        <div style={{ fontSize: "1em" }}>Add Drink</div>
+      </Button>
     </div>
   );
 }
