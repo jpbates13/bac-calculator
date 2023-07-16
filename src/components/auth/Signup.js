@@ -41,7 +41,7 @@ export default function Signup() {
         bodyWeightRef.current.value,
         sexRef.current.value
       );
-      navigate("/dashboard");
+      navigate("/");
     } catch {
       setError("Failed to create an account");
     }

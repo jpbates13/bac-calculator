@@ -1,4 +1,4 @@
-import "../../App.css";
+import "../../App.scss";
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useEffect } from "react";
@@ -13,36 +13,28 @@ function BACCalc() {
   const [userFields, setUserFields] = useState();
 
   useEffect(() => {
-    const docRef = doc(db, "userCollection", currentUser.uid);
-    getDoc(docRef).then((result) => {
-      if (result.exists()) {
-        setUserFields(result.data());
+    const userDocRef = doc(db, "userCollection", currentUser.uid);
+    getDoc(userDocRef).then((userDoc) => {
+      if (userDoc.exists()) {
+        setUserFields(userDoc.data());
+        const drinkDocRef = doc(db, "drinkCollection", currentUser.uid);
+        getDoc(drinkDocRef).then((drinkDoc) => {
+          if (drinkDoc.exists()) {
+            setDrinks(drinkDoc.data().currentDrinks);
+            calculateBAC(drinkDoc.data().currentDrinks, userDoc.data());
+          } else {
+            // doc.data() will be undefined in this case
+            console.log("No such document!");
+            const docRef = doc(db, "drinkCollection", currentUser.uid);
+            setDoc(docRef, { currentDrinks: [], previousDrinks: [] });
+          }
+        });
       } else {
         // doc.data() will be undefined in this case
         console.log("No such document!");
       }
     });
   }, [currentUser]);
-
-  useEffect(() => {
-    const docRef = doc(db, "drinkCollection", currentUser.uid);
-    getDoc(docRef).then((result) => {
-      if (result.exists()) {
-        setDrinks(result.data().currentDrinks);
-      } else {
-        // doc.data() will be undefined in this case
-        console.log("No such document!");
-        const docRef = doc(db, "drinkCollection", currentUser.uid);
-        setDoc(docRef, { currentDrinks: [], previousDrinks: [] });
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    if (drinks.length > 0) {
-      calculateBAC(drinks);
-    }
-  }, [drinks]);
 
   const newDrinkSession = () => {
     setBac(0);
@@ -63,36 +55,43 @@ function BACCalc() {
 
   const addDrink = (e) => {
     const newDrinks = [...drinks, Date.now()];
-    setDrinks(newDrinks);
+
     const docRef = doc(db, "drinkCollection", currentUser.uid);
     getDoc(docRef).then((result) => {
       if (result.exists()) {
-        setDoc(docRef, { ...result.data(), currentDrinks: newDrinks });
+        setDoc(docRef, { ...result.data(), currentDrinks: newDrinks }).then(
+          () => {
+            setDrinks(newDrinks);
+            calculateBAC(newDrinks, userFields);
+          }
+        );
       } else {
         // doc.data() will be undefined in this case
         console.log("No such document!");
       }
     });
-    calculateBAC(newDrinks);
   };
 
   const removeDrink = (e) => {
     const newDrinks = drinks;
     newDrinks.pop();
-    setDrinks(newDrinks);
     const docRef = doc(db, "drinkCollection", currentUser.uid);
     getDoc(docRef).then((result) => {
       if (result.exists()) {
-        setDoc(docRef, { ...result.data(), currentDrinks: newDrinks });
+        setDoc(docRef, { ...result.data(), currentDrinks: newDrinks }).then(
+          () => {
+            setDrinks(newDrinks);
+            calculateBAC(newDrinks, userFields);
+          }
+        );
       } else {
         // doc.data() will be undefined in this case
         console.log("No such document!");
       }
     });
-    calculateBAC(newDrinks);
   };
 
-  const calculateBAC = (drinkArr) => {
+  const calculateBAC = (drinkArr, userData) => {
     if (drinkArr.length == 0) {
       setBac(0);
       return;
@@ -100,8 +99,8 @@ function BACCalc() {
     const startTime = drinkArr[0];
     const hoursSince = Math.floor((new Date() - startTime) / 1000) / 60 / 60;
     const alcoholGrams = 14 * drinkArr.length;
-    const bodyWeight = userFields.bodyWeight * 453.592;
-    const distributionRatio = userFields.sex == "male" ? 0.68 : 0.55;
+    const bodyWeight = userData.bodyWeight * 453.592;
+    const distributionRatio = userData.sex == "male" ? 0.68 : 0.55;
 
     const newBac =
       (alcoholGrams / (bodyWeight * distributionRatio)) * 100 -
@@ -117,7 +116,6 @@ function BACCalc() {
 
   return (
     <div className="App">
-      <h1>Realtime BAC Calculator</h1>
       <Button onClick={removeDrink} size={"lg"}>
         -
       </Button>{" "}
@@ -128,7 +126,7 @@ function BACCalc() {
       <p></p>
       <Button
         onClick={(e) => {
-          calculateBAC(drinks);
+          calculateBAC(drinks, userFields);
         }}
         disabled={drinks.length == 0}
         size={"sm"}
