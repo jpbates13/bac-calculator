@@ -6,6 +6,7 @@ import { getDoc, setDoc, doc } from "firebase/firestore";
 import db from "../../firebase";
 import { Button } from "react-bootstrap";
 import CountUp from "react-countup";
+import ReactVisibilitySensor from "react-visibility-sensor";
 
 function BACCalc() {
   const [drinks, setDrinks] = useState([]);
@@ -13,7 +14,7 @@ function BACCalc() {
   const { currentUser, logout } = useAuth();
   const [userFields, setUserFields] = useState();
   const [loading, setLoading] = useState(false);
-  const [updateBAC, setUpdateBAC] = useState(true);
+  const [updateBAC, setUpdateBAC] = useState(false);
   const [countStart, setCountStart] = useState(0);
   const [countEnd, setCountEnd] = useState(0);
 
@@ -69,8 +70,8 @@ function BACCalc() {
             ...result.data(),
             currentDrinks: newDrinks,
           }).then(async () => {
-            await setDrinks(newDrinks);
-            await calculateBAC(newDrinks, userFields);
+            setDrinks(newDrinks);
+            calculateBAC(newDrinks, userFields);
           });
         } else {
           // doc.data() will be undefined in this case
@@ -95,8 +96,8 @@ function BACCalc() {
             ...result.data(),
             currentDrinks: newDrinks,
           }).then(async () => {
-            await setDrinks(newDrinks);
-            await calculateBAC(newDrinks, userFields);
+            setDrinks(newDrinks);
+            calculateBAC(newDrinks, userFields);
           });
         } else {
           // doc.data() will be undefined in this case
@@ -145,14 +146,19 @@ function BACCalc() {
           decimals={3}
           decimal="."
           suffix="%"
-          onEnd={() => setUpdateBAC(false)}
+          onEnd={() => {
+            console.log("Ended");
+            setUpdateBAC(false);
+          }}
           onStart={() => console.log("Started! 💨")}
         >
           {({ countUpRef, start }) => (
             <>
-              <div style={{ fontSize: "7em" }}>
-                <span ref={countUpRef} />
-              </div>
+              <ReactVisibilitySensor onChange={start}>
+                <div style={{ fontSize: "7em", color: "red" }}>
+                  <span ref={countUpRef} />
+                </div>
+              </ReactVisibilitySensor>
             </>
           )}
         </CountUp>
@@ -167,7 +173,7 @@ function BACCalc() {
         onClick={(e) => {
           calculateBAC(drinks, userFields);
         }}
-        disabled={drinks.length == 0 || loading}
+        disabled={drinks.length == 0 || loading || updateBAC}
         size={"sm"}
       >
         Refresh
