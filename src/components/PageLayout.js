@@ -5,9 +5,13 @@ import "../App.scss";
 import { Navbar, Nav, Container } from "react-bootstrap";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Button } from "react-bootstrap";
-import { FaMoon, FaSun } from "react-icons/fa";
 import CookieConsent from "react-cookie-consent";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faCalculator,
+  faUser,
+  faRightFromBracket,
+} from "@fortawesome/free-solid-svg-icons";
 
 export default function PageLayout(props) {
   const currentYear = new Date().getFullYear();
@@ -31,63 +35,31 @@ export default function PageLayout(props) {
         traffic.
       </CookieConsent>
       <div class="container page-content">
-        <div class="header page-header">
-          <div class="header-content">
-            {error && <p>error</p>}
-            {currentUser && (
-              <div>
-                <Navbar
-                  collapseOnSelect
-                  expand="sm"
-                  class="navbar navbar-expand-lg"
-                >
-                  <Container>
-                    <Navbar.Toggle
-                      class="navbar-toggler"
-                      type="button"
-                      data-toggle="collapse"
-                      data-target="#navbarSupportedContent"
-                      aria-controls="navbarSupportedContent"
-                      aria-expanded="false"
-                      aria-label="Toggle navigation"
-                    >
-                      <span class="mobileMenuIcon navbar-toggler-icon"></span>
-                    </Navbar.Toggle>
-
-                    <Navbar.Collapse
-                      class="collapse navbar-collapse"
-                      id="navbarSupportedContent"
-                    >
-                      <Nav>
-                        <Nav.Link class="nav-item active" href="/">
-                          <b>Calculator</b>
-                        </Nav.Link>
-                        <Nav.Link class="nav-item active" href="/dashboard">
-                          <b>Profile</b>
-                        </Nav.Link>
-                        <Nav.Link
-                          class="nav-item active"
-                          onClick={handleLogout}
-                        >
-                          <b>Log Out</b>
-                        </Nav.Link>
-                      </Nav>
-                    </Navbar.Collapse>
-                  </Container>
-                </Navbar>
-              </div>
-            )}
-          </div>
-        </div>
         <div class="current-content">{props.children}</div>
       </div>
       <footer class="footer page-footer text-center block third">
         <br />
-        <div class="social-icon-set"></div>
-        <br />
-        <p>
-          Copyright &copy; {currentYear} <a href="/">JakeBates.com</a>
-        </p>
+        <div class="bottom-nav">
+          {currentUser && (
+            <>
+              <div>
+                <Nav.Link href="/">
+                  <FontAwesomeIcon size="lg" icon={faCalculator} />
+                </Nav.Link>
+              </div>
+              <div>
+                <Nav.Link href="/dashboard">
+                  <FontAwesomeIcon size="lg" icon={faUser} />
+                </Nav.Link>
+              </div>
+              <div>
+                <Nav.Link onClick={handleLogout}>
+                  <FontAwesomeIcon size="lg" icon={faRightFromBracket} />
+                </Nav.Link>
+              </div>
+            </>
+          )}
+        </div>
       </footer>
     </div>
   );

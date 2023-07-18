@@ -179,7 +179,7 @@ function BACCalc() {
         Refresh
       </Button>
       <div style={{ fontSize: "7em" }}>{drinks.length}</div>
-      <p>drinks since last sober</p>
+      <p>standard drinks since last sober</p>
       <br></br>
       <Button onClick={removeDrink} size={"lg"} disabled={loading}>
         <div style={{ fontSize: "1em" }}>Remove Drink</div>
