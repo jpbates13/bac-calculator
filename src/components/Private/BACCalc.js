@@ -1,18 +1,29 @@
 import "../../App.scss";
-import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getDoc, setDoc, doc } from "firebase/firestore";
 import db from "../../firebase";
 import { Button } from "react-bootstrap";
 import CountUp from "react-countup";
 import ReactVisibilitySensor from "react-visibility-sensor";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
 function BACCalc() {
   const [drinks, setDrinks] = useState([]);
+  const drinksRef = useRef(drinks);
+  drinksRef.current = drinks;
+
   const [bac, setBac] = useState(0);
+  const bacRef = useRef(bac);
+  bacRef.current = bac;
+
   const { currentUser, logout } = useAuth();
+
   const [userFields, setUserFields] = useState();
+  const userFieldsRef = useRef(userFields);
+  userFieldsRef.current = userFields;
+
   const [loading, setLoading] = useState(false);
   const [updateBAC, setUpdateBAC] = useState(false);
   const [countStart, setCountStart] = useState(0);
@@ -27,7 +38,7 @@ function BACCalc() {
         getDoc(drinkDocRef).then((drinkDoc) => {
           if (drinkDoc.exists()) {
             setDrinks(drinkDoc.data().currentDrinks);
-            calculateBAC(drinkDoc.data().currentDrinks, userDoc.data());
+            calculateBAC(drinkDoc.data().currentDrinks, userDoc.data(), 0);
           } else {
             // doc.data() will be undefined in this case
             console.log("No such document!");
@@ -41,6 +52,17 @@ function BACCalc() {
       }
     });
   }, [currentUser]);
+
+  useEffect(() => {
+    const interval = setInterval(
+      () =>
+        calculateBAC(drinksRef.current, userFieldsRef.current, bacRef.current),
+      5000
+    );
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
 
   const newDrinkSession = () => {
     setBac(0);
@@ -71,7 +93,7 @@ function BACCalc() {
             currentDrinks: newDrinks,
           }).then(async () => {
             setDrinks(newDrinks);
-            calculateBAC(newDrinks, userFields);
+            calculateBAC(newDrinks, userFields, bac);
           });
         } else {
           // doc.data() will be undefined in this case
@@ -97,7 +119,7 @@ function BACCalc() {
             currentDrinks: newDrinks,
           }).then(async () => {
             setDrinks(newDrinks);
-            calculateBAC(newDrinks, userFields);
+            calculateBAC(newDrinks, userFields, bac);
           });
         } else {
           // doc.data() will be undefined in this case
@@ -110,8 +132,7 @@ function BACCalc() {
     setLoading(false);
   };
 
-  const calculateBAC = (drinkArr, userData) => {
-    const originalBAC = bac;
+  const calculateBAC = (drinkArr, userData, originalBAC) => {
     if (drinkArr.length == 0) {
       setBac(0);
       return;
@@ -127,7 +148,9 @@ function BACCalc() {
       0.015 * hoursSince;
 
     setBac(newBac);
-    setCountStart(originalBAC, setCountEnd(newBac, setUpdateBAC(true)));
+    if (originalBAC.toFixed(3) != newBac.toFixed(3)) {
+      setCountStart(originalBAC, setCountEnd(newBac, setUpdateBAC(true)));
+    }
 
     // All the alcohol has metabolized
     if (newBac <= 0) {
@@ -136,7 +159,26 @@ function BACCalc() {
   };
 
   return (
-    <div className="App">
+    <div className="BacCalc">
+      <div class="drinkControls">
+        <div
+          onClick={loading ? null : removeDrink}
+          class={"control " + (loading ? "loading-control" : "")}
+        >
+          <FontAwesomeIcon size="lg" icon={faMinus} />
+        </div>
+        <div class="drinks">{drinks.length}</div>{" "}
+        <div
+          onClick={loading ? null : addDrink}
+          class={"control " + (loading ? "loading-control" : "")}
+        >
+          <FontAwesomeIcon size="lg" icon={faPlus} />
+        </div>
+      </div>
+      <p class={"bacLabel drinkLabel"}>
+        standard drink{drinks.length != 1 && "s"} since last sober
+      </p>
+      <hr/>
       {updateBAC ? (
         <CountUp
           start={countStart}
@@ -155,7 +197,7 @@ function BACCalc() {
           {({ countUpRef, start }) => (
             <>
               <ReactVisibilitySensor onChange={start}>
-                <div style={{ fontSize: "7em", color: "red" }}>
+                <div style={{ fontSize: "7em", color: "#337ab7" }}>
                   <span ref={countUpRef} />
                 </div>
               </ReactVisibilitySensor>
@@ -167,26 +209,7 @@ function BACCalc() {
           <div style={{ fontSize: "7em" }}>{bac.toFixed(3)}%</div>
         </>
       )}
-      <div>Estimated BAC</div>
-      <br />
-      <Button
-        onClick={(e) => {
-          calculateBAC(drinks, userFields);
-        }}
-        disabled={drinks.length == 0 || loading || updateBAC}
-        size={"sm"}
-      >
-        Refresh
-      </Button>
-      <div style={{ fontSize: "7em" }}>{drinks.length}</div>
-      <p>standard drinks since last sober</p>
-      <br></br>
-      <Button onClick={removeDrink} size={"lg"} disabled={loading}>
-        <div style={{ fontSize: "1em" }}>Remove Drink</div>
-      </Button>{" "}
-      <Button onClick={addDrink} size={"lg"} disabled={loading}>
-        <div style={{ fontSize: "1em" }}>Add Drink</div>
-      </Button>
+      <div class={"bacLabel"}>estimated BAC</div>
     </div>
   );
 }

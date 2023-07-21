@@ -3,6 +3,7 @@ import { Form, Button, Card, Alert } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
+import "../../App.scss";
 
 export default function Signup() {
   const emailRef = useRef();
@@ -50,7 +51,7 @@ export default function Signup() {
   }
 
   return (
-    <div>
+    <div class="BacCalc">
       <Helmet>
         <title>JakeBates.com | Signup</title>
       </Helmet>
@@ -75,14 +76,16 @@ export default function Signup() {
               <Form.Label>Body Weight (lbs)</Form.Label>
               <Form.Control type="number" ref={bodyWeightRef} required />
             </Form.Group>
+            <br />
             <Form.Group id="sex">
-              <Form.Label>Sex</Form.Label>
+              <Form.Label>Sex </Form.Label>
               <Form.Select ref={sexRef} required>
                 <option>Choose a sex...</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
               </Form.Select>
             </Form.Group>
+            <br/>
             <Form.Group id="password">
               <Form.Label>Password</Form.Label>
               <Form.Control type="password" ref={passwordRef} required />

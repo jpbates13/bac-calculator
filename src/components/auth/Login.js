@@ -3,6 +3,7 @@ import { Form, Button, Card, Alert } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
+import "../../App.scss"
 
 export default function Login() {
   const emailRef = useRef();
@@ -35,7 +36,7 @@ export default function Login() {
   }
 
   return (
-    <div>
+    <div class="BacCalc">
       <Helmet>
         <title>JakeBates.com | Login</title>
       </Helmet>

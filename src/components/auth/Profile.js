@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { collection, doc, getDoc, updateDoc } from "firebase/firestore";
 import db from "../../firebase";
+import "../../App.scss"
 
 export default function Dashboard() {
   const [error, setError] = useState("");
@@ -34,10 +35,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div>
+    <div class="BacCalc">
       <Card>
         <Card.Body>
-          <h2 className="textcenter mb-4">Dashboard</h2>
+          <h2 className="textcenter mb-4">Profile</h2>
           {error && <Alert variant="danger">{error}</Alert>}
           <strong>Email: </strong> {currentUser.email}
           <br />

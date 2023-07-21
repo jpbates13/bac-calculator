@@ -29,7 +29,7 @@ export default function PageLayout(props) {
     }
   }
   return (
-    <div>
+    <div class="whole-app">
       <CookieConsent>
         This website uses cookies to improve user experience and analyze website
         traffic.

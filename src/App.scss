@@ -1,3 +1,9 @@
+@import url("https://fonts.googleapis.com/css2?family=Lato&display=swap");
+
+* {
+  font-family: "Lato", sans-serif;
+}
+
 .App {
   text-align: center;
 }
@@ -42,18 +48,62 @@
   left: 0;
   bottom: 0;
   width: 100%;
-  background-color: lightgrey;
+  background-color: whitesmoke;
   text-align: center;
 }
-.bottom-nav{
+.bottom-nav {
   font-size: 2em;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   padding-left: 5%;
   padding-right: 5%;
   padding-bottom: 5%;
 }
 
 .App{
-  padding-top: 5%;
+  background-color: whitesmoke;
+  padding-top: 1%;
+  height: 100vh;
+  position: relative;
+}
+.BacCalc {
+  padding: 2%;
+  border-radius: 10px;
+  background-color: white;
+  width: 98%;
+  height: 98%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.bacLabel{
+  font-size: 1.75em;
+}
+.drinkLabel{
+  margin-bottom: 1em;
+}
+.drinkControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drinkControls > div {
+  padding-left: 0.3em;
+  padding-right: 0.3em;
+}
+.control {
+  font-size: 3em;
+  cursor: pointer;
+  color: darkgray;
+}
+.control:hover {
+  color: #333;
+}
+.loading-control {
+  color: lightgrey !important;
+  cursor: not-allowed;
+}
+.drinks {
+  font-size: 7em;
 }
