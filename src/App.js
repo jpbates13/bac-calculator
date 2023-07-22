@@ -12,7 +12,7 @@ import PrivateRoute from "./PrivateRoute";
 
 function App() {
   return (
-    <div className="App">
+    <div className="App" style={{paddingTop: "env(safe-area-inset-top)"}}>
       <AuthProvider>
         <PageLayout>
           <Routes>
