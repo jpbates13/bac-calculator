@@ -3,11 +3,17 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { getDoc, setDoc, doc } from "firebase/firestore";
 import db from "../../firebase";
-import { Button } from "react-bootstrap";
+import { Button, Fade } from "react-bootstrap";
 import CountUp from "react-countup";
 import ReactVisibilitySensor from "react-visibility-sensor";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPlus,
+  faMinus,
+  faInfoCircle,
+  faClose,
+} from "@fortawesome/free-solid-svg-icons";
+import Modal from "../Modal";
 
 function BACCalc() {
   const [drinks, setDrinks] = useState([]);
@@ -25,6 +31,7 @@ function BACCalc() {
   userFieldsRef.current = userFields;
 
   const [loading, setLoading] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [updateBAC, setUpdateBAC] = useState(false);
   const [countStart, setCountStart] = useState(0);
   const [countEnd, setCountEnd] = useState(0);
@@ -40,7 +47,8 @@ function BACCalc() {
             setDrinks(drinkDoc.data().currentDrinks);
             calculateBAC(drinkDoc.data().currentDrinks, userDoc.data(), 0);
           } else {
-            // doc.data() will be undefined in this case
+            // doc.data() will be undefined in this case, we have a new user
+            setShowInfo(true)
             console.log("No such document!");
             const docRef = doc(db, "drinkCollection", currentUser.uid);
             setDoc(docRef, { currentDrinks: [], previousDrinks: [] });
@@ -135,6 +143,9 @@ function BACCalc() {
   const calculateBAC = (drinkArr, userData, originalBAC) => {
     if (drinkArr.length == 0) {
       setBac(0);
+      if (originalBAC != 0) {
+        setCountStart(originalBAC, setCountEnd(0, setUpdateBAC(true)));
+      }
       return;
     }
     const startTime = drinkArr[0];
@@ -178,7 +189,7 @@ function BACCalc() {
       <p class={"bacLabel drinkLabel"}>
         standard drink{drinks.length != 1 && "s"} since last sober
       </p>
-      <hr/>
+      <hr />
       {updateBAC ? (
         <CountUp
           start={countStart}
@@ -209,7 +220,42 @@ function BACCalc() {
           <div style={{ fontSize: "7em" }}>{bac.toFixed(3)}%</div>
         </>
       )}
-      <div class={"bacLabel"}>estimated BAC</div>
+      <div class={"bacLabel"}>
+        estimated real-time BAC{" "}
+        <a
+          onClick={() => {
+            setShowInfo(true);
+          }}
+        >
+          <FontAwesomeIcon icon={faInfoCircle} />
+        </a>
+      </div>
+      <Modal
+        isOpen={showInfo}
+        handleClose={() => {
+          setShowInfo(false);
+        }}
+      >
+        <div>
+          <h2>Disclaimer</h2>
+          <p>
+            This <i>estimated</i> value is calculated using your body weight,
+            sex, and timing of your drinks in the{" "}
+            <a href="https://alcohol.iupui.edu/calculators/bac.html">
+              Widmark Equation
+            </a>
+            . Each time you click the add drink button a drink is timestamped.
+            The BAC value is updated automatically over time.
+            <br />
+            <br />
+            This equation is not 100% accurate, and your actual blood alcohol
+            content can vary based on a number of factors. Regardless, you
+            should use your own judgement to drink responsibily.{" "}
+            <b>Please do not drink and drive</b> regardless of any value
+            produced by this app.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }
