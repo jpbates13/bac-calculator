@@ -4,11 +4,13 @@ import { getDoc, doc } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import db from "../../firebase";
 import "../../App.scss";
+import HeatMap from "../HeatMap";
 
 function PastDrinks() {
   const [drinks, setDrinks] = useState([]);
   const { currentUser, logout } = useAuth();
   const [drinksByDate, setDrinksByDate] = useState({});
+  const [displayDays, setDisplayDays] = useState(125);
 
   useEffect(() => {
     const docRef = doc(db, "drinkCollection", currentUser.uid);
@@ -42,26 +44,21 @@ function PastDrinks() {
   return (
     <div className="BacCalc">
       <h1>Drink History</h1>
-      {drinks.length > 0 ? (
-        <div>
-          {Object.keys(drinksByDate)
-            .sort((a, b) => {
-              return new Date(b) - new Date(a);
-            })
-            .map((key) => {
-              return (
-                <>
-                  <h3>{key}</h3>
-                  <p>Drinks: {drinksByDate[key]}</p>
-                </>
-              );
-            })}
-        </div>
-      ) : (
-        <div>
-          <p>You have not recorded any drinks.</p>
-        </div>
-      )}
+      <p>
+        Display{" "}
+        <input
+          value={displayDays}
+          className="displayDaysInput"
+          type="number"
+          min="1"
+          max="626"
+          onChange={(e) => {
+            setDisplayDays(e.target.value);
+          }}
+        />{" "}
+        days.
+      </p>
+      <HeatMap data={drinksByDate} displayDays={displayDays} />
     </div>
   );
 }
