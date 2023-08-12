@@ -48,7 +48,7 @@ function BACCalc() {
             calculateBAC(drinkDoc.data().currentDrinks, userDoc.data(), 0);
           } else {
             // doc.data() will be undefined in this case, we have a new user
-            setShowInfo(true)
+            setShowInfo(true);
             console.log("No such document!");
             const docRef = doc(db, "drinkCollection", currentUser.uid);
             setDoc(docRef, { currentDrinks: [], previousDrinks: [] });
@@ -238,7 +238,7 @@ function BACCalc() {
       >
         <div>
           <h2>Disclaimer</h2>
-          <p>
+          <p style={{ fontSize: "1em" }}>
             This <i>estimated</i> value is calculated using your body weight,
             sex, and timing of your drinks in the{" "}
             <a href="https://alcohol.iupui.edu/calculators/bac.html">
