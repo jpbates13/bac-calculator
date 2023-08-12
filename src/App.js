@@ -9,10 +9,11 @@ import { Route, Routes } from "react-router";
 import BACCalc from "./components/Private/BACCalc";
 import PageLayout from "./components/PageLayout";
 import PrivateRoute from "./PrivateRoute";
+import PastDrinks from "./components/Private/PastDrinks";
 
 function App() {
   return (
-    <div className="App" style={{paddingTop: "env(safe-area-inset-top)"}}>
+    <div className="App" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <AuthProvider>
         <PageLayout>
           <Routes>
@@ -31,6 +32,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <Profile />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/calendar"
+              element={
+                <PrivateRoute>
+                  <PastDrinks />
                 </PrivateRoute>
               }
             />

@@ -11,6 +11,7 @@ import {
   faCalculator,
   faUser,
   faRightFromBracket,
+  faCalendarCheck,
 } from "@fortawesome/free-solid-svg-icons";
 
 export default function PageLayout(props) {
@@ -45,6 +46,11 @@ export default function PageLayout(props) {
               <div>
                 <Nav.Link href="/">
                   <FontAwesomeIcon size="lg" icon={faCalculator} />
+                </Nav.Link>
+              </div>
+              <div>
+                <Nav.Link href="/calendar">
+                  <FontAwesomeIcon size="lg" icon={faCalendarCheck} />
                 </Nav.Link>
               </div>
               <div>

@@ -3,7 +3,7 @@ import { Form, Button, Card, Alert } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
 import { Link, useNavigate, Navigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import "../../App.scss"
+import "../../App.scss";
 
 export default function Login() {
   const emailRef = useRef();
