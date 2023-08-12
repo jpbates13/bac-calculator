@@ -5,6 +5,7 @@ import { Tooltip } from "@mui/material";
 
 const HeatMap = ({ data, displayDays }) => {
   const [heatmapDays, setHeatmapDays] = useState([]);
+  const [openToolTip, setOpenToolTip] = useState(null);
 
   useEffect(() => {
     const currentDate = new Date();
@@ -30,12 +31,19 @@ const HeatMap = ({ data, displayDays }) => {
   return (
     <div className="heatmap-container">
       {heatmapDays.map((day) => (
-        <Tooltip placement="top-start" title="Hello">
-          <div
+        <Tooltip
+          placement="top"
+          title={day.date + ", Drinks: " + day.value}
+          open={day.date == openToolTip}
+        >
+          <button
             key={day.date}
             className="heatmap-dot"
             style={{
-              backgroundColor: `rgba(255, 0, 0, ${day.value / 10})`,
+              backgroundColor: `rgba(255, 0, 0, ${day.value / 8})`,
+            }}
+            onClick={() => {
+              setOpenToolTip(day.date);
             }}
           />
         </Tooltip>
