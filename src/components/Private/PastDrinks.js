@@ -10,7 +10,8 @@ function PastDrinks() {
   const [drinks, setDrinks] = useState([]);
   const { currentUser, logout } = useAuth();
   const [drinksByDate, setDrinksByDate] = useState({});
-  const [displayDays, setDisplayDays] = useState(125);
+  const [displayDays, setDisplayDays] = useState(200);
+  const [totalDrinks, setTotalDrinks] = useState(0);
 
   useEffect(() => {
     const docRef = doc(db, "drinkCollection", currentUser.uid);
@@ -51,14 +52,26 @@ function PastDrinks() {
           className="displayDaysInput"
           type="number"
           min="1"
-          max="626"
+          max="365"
           onChange={(e) => {
-            setDisplayDays(e.target.value);
+            if (displayDays <= 365) {
+              setDisplayDays(e.target.value);
+            } else {
+              setDisplayDays(365);
+            }
           }}
         />{" "}
-        days.
+        previous days.
       </p>
-      <HeatMap data={drinksByDate} displayDays={displayDays} />
+      <p>
+        Total drinks in this period: {totalDrinks} (
+        {(totalDrinks / displayDays).toFixed(2)} per day)
+      </p>
+      <HeatMap
+        data={drinksByDate}
+        displayDays={displayDays}
+        setTotalDrinks={setTotalDrinks}
+      />
     </div>
   );
 }
