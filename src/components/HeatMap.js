@@ -36,7 +36,7 @@ const HeatMap = ({ data, displayDays }) => {
           title={day.date + ", Drinks: " + day.value}
           open={day.date == openToolTip}
         >
-          <button
+          <div
             key={day.date}
             className="heatmap-dot"
             style={{
