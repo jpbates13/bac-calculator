@@ -14,6 +14,7 @@ import {
   faClose,
 } from "@fortawesome/free-solid-svg-icons";
 import Modal from "../Modal";
+import LineGraph from "../LineGraph";
 
 function BACCalc() {
   const [drinks, setDrinks] = useState([]);
@@ -35,6 +36,10 @@ function BACCalc() {
   const [updateBAC, setUpdateBAC] = useState(false);
   const [countStart, setCountStart] = useState(0);
   const [countEnd, setCountEnd] = useState(0);
+
+  const [bacData, setBacData] = useState([]);
+  const bacDataRef = useRef(bacData);
+  bacDataRef.current = bacData;
 
   useEffect(() => {
     const userDocRef = doc(db, "userCollection", currentUser.uid);
@@ -64,7 +69,12 @@ function BACCalc() {
   useEffect(() => {
     const interval = setInterval(
       () =>
-        calculateBAC(drinksRef.current, userFieldsRef.current, bacRef.current),
+        calculateBAC(
+          drinksRef.current,
+          userFieldsRef.current,
+          bacRef.current,
+          bacDataRef.current
+        ),
       5000
     );
     return () => {
@@ -140,7 +150,7 @@ function BACCalc() {
     setLoading(false);
   };
 
-  const calculateBAC = (drinkArr, userData, originalBAC) => {
+  const calculateBAC = (drinkArr, userData, originalBAC, bacData) => {
     if (drinkArr.length == 0) {
       setBac(0);
       if (originalBAC != 0) {
@@ -159,6 +169,15 @@ function BACCalc() {
       0.015 * hoursSince;
 
     setBac(newBac);
+
+    let newBacData = null;
+    if (bacDataRef.current == undefined) {
+      newBacData = [{ x: new Date(), y: newBac }];
+    } else {
+      newBacData = [...bacDataRef.current, { x: new Date(), y: newBac }];
+    }
+    setBacData(newBacData);
+
     if (originalBAC.toFixed(3) != newBac.toFixed(3)) {
       setCountStart(originalBAC, setCountEnd(newBac, setUpdateBAC(true)));
     }
@@ -171,65 +190,69 @@ function BACCalc() {
 
   return (
     <div className="BacCalc">
-      <div class="drinkControls">
-        <div
-          onClick={loading ? null : removeDrink}
-          class={"control " + (loading ? "loading-control" : "")}
-        >
-          <FontAwesomeIcon size="lg" icon={faMinus} />
+      <div className="textStats">
+        <div className="textStat">
+          <div class="drinkControls">
+            <div
+              onClick={loading ? null : removeDrink}
+              class={"control " + (loading ? "loading-control" : "")}
+            >
+              <FontAwesomeIcon size="lg" icon={faMinus} />
+            </div>
+            <div class="drinks">{drinks.length}</div>{" "}
+            <div
+              onClick={loading ? null : addDrink}
+              class={"control " + (loading ? "loading-control" : "")}
+            >
+              <FontAwesomeIcon size="lg" icon={faPlus} />
+            </div>
+          </div>
+          <p class={"bacLabel drinkLabel"}>
+            standard drink{drinks.length != 1 && "s"} since last sober
+          </p>
         </div>
-        <div class="drinks">{drinks.length}</div>{" "}
-        <div
-          onClick={loading ? null : addDrink}
-          class={"control " + (loading ? "loading-control" : "")}
-        >
-          <FontAwesomeIcon size="lg" icon={faPlus} />
-        </div>
-      </div>
-      <p class={"bacLabel drinkLabel"}>
-        standard drink{drinks.length != 1 && "s"} since last sober
-      </p>
-      <hr />
-      {updateBAC ? (
-        <CountUp
-          start={countStart}
-          end={countEnd}
-          duration={2.75}
-          separator=" "
-          decimals={3}
-          decimal="."
-          suffix="%"
-          onEnd={() => {
-            console.log("Ended");
-            setUpdateBAC(false);
-          }}
-          onStart={() => console.log("Started! 💨")}
-        >
-          {({ countUpRef, start }) => (
+        <div className="textStat">
+          {updateBAC ? (
+            <CountUp
+              start={countStart}
+              end={countEnd}
+              duration={2.75}
+              separator=" "
+              decimals={3}
+              decimal="."
+              suffix="%"
+              onEnd={() => {
+                setUpdateBAC(false);
+              }}
+            >
+              {({ countUpRef, start }) => (
+                <>
+                  <ReactVisibilitySensor onChange={start}>
+                    <div style={{ fontSize: "3em", color: "#337ab7" }}>
+                      <span ref={countUpRef} />
+                    </div>
+                  </ReactVisibilitySensor>
+                </>
+              )}
+            </CountUp>
+          ) : (
             <>
-              <ReactVisibilitySensor onChange={start}>
-                <div style={{ fontSize: "7em", color: "#337ab7" }}>
-                  <span ref={countUpRef} />
-                </div>
-              </ReactVisibilitySensor>
+              <div style={{ fontSize: "3em" }}>{bac.toFixed(3)}%</div>
             </>
           )}
-        </CountUp>
-      ) : (
-        <>
-          <div style={{ fontSize: "7em" }}>{bac.toFixed(3)}%</div>
-        </>
-      )}
-      <div class={"bacLabel"}>
-        estimated real-time BAC{" "}
-        <a
-          onClick={() => {
-            setShowInfo(true);
-          }}
-        >
-          <FontAwesomeIcon icon={faInfoCircle} />
-        </a>
+          <div class={"bacLabel"}>
+            estimated real-time BAC{" "}
+            <a
+              onClick={() => {
+                setShowInfo(true);
+              }}
+            >
+              <FontAwesomeIcon icon={faInfoCircle} />
+            </a>
+          </div>
+        </div>
       </div>
+      <LineGraph bacData={bacData} />
       <Modal
         isOpen={showInfo}
         handleClose={() => {

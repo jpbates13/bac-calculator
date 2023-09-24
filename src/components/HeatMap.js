@@ -35,26 +35,34 @@ const HeatMap = ({ data, displayDays, setTotalDrinks }) => {
   return (
     <div className="heatmap-container">
       {heatmapDays.map((day) => (
-        <Tooltip
-          placement="top"
-          title={
-            <p>
-              {day.date}, Drinks: {day.value}
-            </p>
-          }
-          open={day.date == openToolTip}
+        <div
+          onClick={() => {
+            if (openToolTip != null) {
+              setOpenToolTip(null);
+            }
+          }}
         >
-          <div
-            key={day.date}
-            className="heatmap-dot"
-            style={{
-              backgroundColor: `rgba(255, 0, 0, ${day.value / 8})`,
-            }}
-            onClick={() => {
-              setOpenToolTip(day.date);
-            }}
-          />
-        </Tooltip>
+          <Tooltip
+            placement="top"
+            title={
+              <p>
+                {day.date}, Drinks: {day.value}
+              </p>
+            }
+            open={day.date == openToolTip}
+          >
+            <div
+              key={day.date}
+              className="heatmap-dot"
+              style={{
+                backgroundColor: `rgba(255, 0, 0, ${day.value / 8})`,
+              }}
+              onClick={() => {
+                setOpenToolTip(day.date);
+              }}
+            />
+          </Tooltip>
+        </div>
       ))}
     </div>
   );
