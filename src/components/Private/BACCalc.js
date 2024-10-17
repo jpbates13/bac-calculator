@@ -158,15 +158,19 @@ function BACCalc() {
       }
       return;
     }
-    const startTime = drinkArr[0];
-    const hoursSince = Math.floor((new Date() - startTime) / 1000) / 60 / 60;
-    const alcoholGrams = 14 * drinkArr.length;
+
     const bodyWeight = userData.bodyWeight * 453.592;
     const distributionRatio = userData.sex == "male" ? 0.68 : 0.55;
 
-    const newBac =
-      (alcoholGrams / (bodyWeight * distributionRatio)) * 100 -
-      0.015 * hoursSince;
+    let newBac = 0;
+    for (let i = 0; i < drinkArr.length; i++) {
+      const drinkTime = drinkArr[i];
+      const hoursSince = Math.floor((new Date() - drinkTime) / 1000) / 60 / 60;
+      const alcoholGrams = 14;
+      newBac +=
+        (alcoholGrams / (bodyWeight * distributionRatio)) * 100 -
+        0.015 * hoursSince;
+    }
 
     setBac(newBac);
 
