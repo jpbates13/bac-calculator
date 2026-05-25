@@ -1,7 +1,7 @@
 import "../../App.scss";
 import { useAuth } from "../../contexts/AuthContext";
-import { useEffect, useRef, useState } from "react";
-import { getDoc, setDoc, doc } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { getDoc, setDoc, doc, collection, writeBatch, query, where, getDocs, addDoc, deleteDoc } from "firebase/firestore";
 import db from "../../firebase";
 import { Button, Fade } from "react-bootstrap";
 import CountUp from "react-countup";
@@ -15,157 +15,153 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import Modal from "../Modal";
 import LineGraph from "../LineGraph";
+import { useInterval } from "../../hooks/useInterval";
 
 function BACCalc() {
-  const [drinks, setDrinks] = useState([]);
-  const drinksRef = useRef(drinks);
-  drinksRef.current = drinks;
-
+  const [drinks, setDrinks] = useState([]); // Array of { id, timestamp }
   const [bac, setBac] = useState(0);
-  const bacRef = useRef(bac);
-  bacRef.current = bac;
-
   const { currentUser, logout } = useAuth();
-
   const [userFields, setUserFields] = useState();
-  const userFieldsRef = useRef(userFields);
-  userFieldsRef.current = userFields;
-
   const [loading, setLoading] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [updateBAC, setUpdateBAC] = useState(false);
   const [countStart, setCountStart] = useState(0);
   const [countEnd, setCountEnd] = useState(0);
-
   const [bacData, setBacData] = useState([]);
-  const bacDataRef = useRef(bacData);
-  bacDataRef.current = bacData;
 
   useEffect(() => {
-    const userDocRef = doc(db, "userCollection", currentUser.uid);
-    getDoc(userDocRef).then((userDoc) => {
+    const loadUserData = async () => {
+      const userDocRef = doc(db, "userCollection", currentUser.uid);
+      const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
         setUserFields(userDoc.data());
-        const drinkDocRef = doc(db, "drinkCollection", currentUser.uid);
-        getDoc(drinkDocRef).then((drinkDoc) => {
-          if (drinkDoc.exists()) {
-            setDrinks(drinkDoc.data().currentDrinks);
-            calculateBAC(drinkDoc.data().currentDrinks, userDoc.data(), 0);
-          } else {
-            // doc.data() will be undefined in this case, we have a new user
-            setShowInfo(true);
-            console.log("No such document!");
-            const docRef = doc(db, "drinkCollection", currentUser.uid);
-            setDoc(docRef, { currentDrinks: [], previousDrinks: [] });
+        
+        // Check for old drinkCollection to migrate
+        const oldDrinkDocRef = doc(db, "drinkCollection", currentUser.uid);
+        const oldDrinkDoc = await getDoc(oldDrinkDocRef);
+        const drinksRef = collection(db, "userCollection", currentUser.uid, "drinks");
+        
+        if (oldDrinkDoc.exists() && oldDrinkDoc.data().migrated !== true) {
+          console.log("Migrating old drinks...");
+          const batch = writeBatch(db);
+          const data = oldDrinkDoc.data();
+          
+          if (data.previousDrinks) {
+            data.previousDrinks.forEach(timestamp => {
+              const newDrinkRef = doc(drinksRef);
+              batch.set(newDrinkRef, { timestamp, status: 'previous' });
+            });
           }
+          
+          let currentDrinksArr = [];
+          if (data.currentDrinks) {
+            data.currentDrinks.forEach(timestamp => {
+              const newDrinkRef = doc(drinksRef);
+              batch.set(newDrinkRef, { timestamp, status: 'current' });
+              currentDrinksArr.push({ id: newDrinkRef.id, timestamp });
+            });
+          }
+          
+          batch.update(oldDrinkDocRef, { migrated: true });
+          await batch.commit();
+          
+          setDrinks(currentDrinksArr);
+          calculateBAC(currentDrinksArr, userDoc.data(), 0, bacData);
+          return;
+        }
+        
+        // Normal load from subcollection
+        const q = query(drinksRef, where("status", "==", "current"));
+        const querySnapshot = await getDocs(q);
+        const currentDrinksArr = [];
+        querySnapshot.forEach((doc) => {
+          currentDrinksArr.push({ id: doc.id, timestamp: doc.data().timestamp });
         });
+        
+        setDrinks(currentDrinksArr);
+        calculateBAC(currentDrinksArr, userDoc.data(), 0, bacData);
       } else {
-        // doc.data() will be undefined in this case
-        console.log("No such document!");
+        setShowInfo(true);
       }
-    });
+    };
+    if (currentUser) {
+      loadUserData();
+    }
   }, [currentUser]);
 
-  useEffect(() => {
-    const interval = setInterval(
-      () =>
-        calculateBAC(
-          drinksRef.current,
-          userFieldsRef.current,
-          bacRef.current,
-          bacDataRef.current
-        ),
-      5000
-    );
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+  useInterval(() => {
+    if (userFields) {
+      calculateBAC(drinks, userFields, bac, bacData);
+    }
+  }, 5000);
 
-  const newDrinkSession = () => {
+  const newDrinkSession = async () => {
     setBac(0);
-    let previousDrinks = [];
-    const docRef = doc(db, "drinkCollection", currentUser.uid);
-    getDoc(docRef).then((result) => {
-      if (result.exists()) {
-        previousDrinks = result.data().previousDrinks;
-        previousDrinks = [...previousDrinks, ...drinks];
-        setDoc(docRef, { currentDrinks: [], previousDrinks: previousDrinks });
-        setDrinks([]);
-      } else {
-        // doc.data() will be undefined in this case
-        console.log("No such document!");
-      }
+    const batch = writeBatch(db);
+    const drinksRef = collection(db, "userCollection", currentUser.uid, "drinks");
+    
+    // Set all current drinks to previous
+    drinks.forEach(drink => {
+      const drinkDocRef = doc(drinksRef, drink.id);
+      batch.update(drinkDocRef, { status: 'previous' });
     });
+    
+    await batch.commit();
+    setDrinks([]);
   };
 
   const addDrink = async (e) => {
     setLoading(true);
-    const newDrinks = [...drinks, Date.now()];
-    const docRef = doc(db, "drinkCollection", currentUser.uid);
-    await getDoc(docRef)
-      .then(async (result) => {
-        if (result.exists()) {
-          await setDoc(docRef, {
-            ...result.data(),
-            currentDrinks: newDrinks,
-          }).then(async () => {
-            setDrinks(newDrinks);
-            calculateBAC(newDrinks, userFields, bac);
-          });
-        } else {
-          // doc.data() will be undefined in this case
-          console.log("No such document!");
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to submit drink!");
-      });
+    const timestamp = Date.now();
+    const drinksRef = collection(db, "userCollection", currentUser.uid, "drinks");
+    
+    try {
+      const docRef = await addDoc(drinksRef, { timestamp, status: 'current' });
+      const newDrinks = [...drinks, { id: docRef.id, timestamp }];
+      setDrinks(newDrinks);
+      calculateBAC(newDrinks, userFields, bac, bacData);
+    } catch (err) {
+      console.error("Failed to submit drink!", err);
+    }
     setLoading(false);
   };
 
   const removeDrink = async (e) => {
+    if (drinks.length === 0) return;
     setLoading(true);
-    const newDrinks = drinks;
-    newDrinks.pop();
-    const docRef = doc(db, "drinkCollection", currentUser.uid);
-    await getDoc(docRef)
-      .then(async (result) => {
-        if (result.exists()) {
-          await setDoc(docRef, {
-            ...result.data(),
-            currentDrinks: newDrinks,
-          }).then(async () => {
-            setDrinks(newDrinks);
-            calculateBAC(newDrinks, userFields, bac);
-          });
-        } else {
-          // doc.data() will be undefined in this case
-          console.log("No such document!");
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to submit drink!");
-      });
+    
+    const drinkToRemove = drinks[drinks.length - 1];
+    const newDrinks = drinks.slice(0, -1);
+    const drinkDocRef = doc(db, "userCollection", currentUser.uid, "drinks", drinkToRemove.id);
+    
+    try {
+      await deleteDoc(drinkDocRef);
+      setDrinks(newDrinks);
+      calculateBAC(newDrinks, userFields, bac, bacData);
+    } catch (err) {
+      console.error("Failed to remove drink!", err);
+    }
     setLoading(false);
   };
 
-  const calculateBAC = (drinkArr, userData, originalBAC, bacData) => {
-    if (drinkArr.length == 0) {
+  const calculateBAC = (drinkArr, userData, originalBAC, currentBacData) => {
+    if (drinkArr.length === 0) {
       setBac(0);
-      if (originalBAC != 0) {
-        setCountStart(originalBAC, setCountEnd(0, setUpdateBAC(true)));
+      if (originalBAC !== 0) {
+        setCountStart(originalBAC);
+        setCountEnd(0);
+        setUpdateBAC(true);
       }
       return;
     }
 
     const bodyWeight = userData.bodyWeight * 453.592;
-    const distributionRatio = userData.sex == "male" ? 0.68 : 0.55;
+    const distributionRatio = userData.sex === "male" ? 0.68 : 0.55;
     const alcoholGrams = 14;
     const bacPerDrink = (alcoholGrams / (bodyWeight * distributionRatio)) * 100;
 
     let newBac = 0;
-    const sortedDrinks = [...drinkArr].sort((a, b) => a - b);
+    const sortedDrinks = [...drinkArr].map(d => d.timestamp).sort((a, b) => a - b);
     let lastTime = sortedDrinks[0];
 
     for (let i = 0; i < sortedDrinks.length; i++) {
@@ -187,16 +183,14 @@ function BACCalc() {
 
     setBac(newBac);
 
-    let newBacData = null;
-    if (bacDataRef.current == undefined) {
-      newBacData = [{ x: new Date(), y: newBac }];
-    } else {
-      newBacData = [...bacDataRef.current, { x: new Date(), y: newBac }];
-    }
+    let newBacData = currentBacData || [];
+    newBacData = [...newBacData, { x: new Date(), y: newBac }];
     setBacData(newBacData);
 
-    if (originalBAC.toFixed(3) != newBac.toFixed(3)) {
-      setCountStart(originalBAC, setCountEnd(newBac, setUpdateBAC(true)));
+    if (originalBAC.toFixed(3) !== newBac.toFixed(3)) {
+      setCountStart(originalBAC);
+      setCountEnd(newBac);
+      setUpdateBAC(true);
     }
 
     // All the alcohol has metabolized
@@ -209,23 +203,23 @@ function BACCalc() {
     <div className="BacCalc">
       <div className="textStats">
         <div className="textStat">
-          <div class="drinkControls">
+          <div className="drinkControls">
             <div
               onClick={loading ? null : removeDrink}
-              class={"control " + (loading ? "loading-control" : "")}
+              className={"control " + (loading ? "loading-control" : "")}
             >
               <FontAwesomeIcon size="lg" icon={faMinus} />
             </div>
-            <div class="drinks">{drinks.length}</div>{" "}
+            <div className="drinks">{drinks.length}</div>{" "}
             <div
               onClick={loading ? null : addDrink}
-              class={"control " + (loading ? "loading-control" : "")}
+              className={"control " + (loading ? "loading-control" : "")}
             >
               <FontAwesomeIcon size="lg" icon={faPlus} />
             </div>
           </div>
-          <p class={"bacLabel drinkLabel"}>
-            standard drink{drinks.length != 1 && "s"} since last sober
+          <p className={"bacLabel drinkLabel"}>
+            standard drink{drinks.length !== 1 && "s"} since last sober
           </p>
         </div>
         <div className="textStat">
@@ -245,7 +239,7 @@ function BACCalc() {
               {({ countUpRef, start }) => (
                 <>
                   <ReactVisibilitySensor onChange={start}>
-                    <div style={{ fontSize: "3em", color: "#337ab7" }}>
+                    <div style={{ fontSize: "3em", color: "var(--primary-color, #337ab7)" }}>
                       <span ref={countUpRef} />
                     </div>
                   </ReactVisibilitySensor>
@@ -257,9 +251,10 @@ function BACCalc() {
               <div style={{ fontSize: "3em" }}>{bac.toFixed(3)}%</div>
             </>
           )}
-          <div class={"bacLabel"}>
+          <div className={"bacLabel"}>
             estimated real-time BAC{" "}
             <a
+              style={{cursor: 'pointer'}}
               onClick={() => {
                 setShowInfo(true);
               }}
@@ -281,7 +276,7 @@ function BACCalc() {
           <p style={{ fontSize: "1em" }}>
             This <i>estimated</i> value is calculated using your body weight,
             sex, and timing of your drinks in the{" "}
-            <a href="https://alcohol.iupui.edu/calculators/bac.html">
+            <a href="https://alcohol.iupui.edu/calculators/bac.html" target="_blank" rel="noreferrer">
               Widmark Equation
             </a>
             . Each time you click the add drink button a drink is timestamped.

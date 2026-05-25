@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User Collection: Users can only read and write their own document
+    match /userCollection/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Drinks Subcollection: Users can only read and write their own drinks
+      match /drinks/{drinkId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Legacy Drink Collection (for migrations)
+    match /drinkCollection/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

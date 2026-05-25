@@ -51,7 +51,7 @@ export default function Signup() {
   }
 
   return (
-    <div class="BacCalc">
+    <div className="BacCalc">
       <Helmet>
         <title>JakeBates.com | Signup</title>
       </Helmet>

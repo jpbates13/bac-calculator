@@ -36,7 +36,7 @@ export default function Login() {
   }
 
   return (
-    <div class="BacCalc">
+    <div className="BacCalc">
       <Helmet>
         <title>JakeBates.com | Login</title>
       </Helmet>

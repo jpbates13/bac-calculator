@@ -35,7 +35,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div class="BacCalc">
+    <div className="BacCalc">
       <Card>
         <Card.Body>
           <h2 className="textcenter mb-4">Profile</h2>

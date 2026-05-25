@@ -30,17 +30,17 @@ export default function PageLayout(props) {
     }
   }
   return (
-    <div class="whole-app">
+    <div className="whole-app">
       <CookieConsent>
         This website uses cookies to improve user experience and analyze website
         traffic.
       </CookieConsent>
-      <div class="container page-content">
-        <div class="current-content">{props.children}</div>
+      <div className="container page-content">
+        <div className="current-content">{props.children}</div>
       </div>
-      <footer class="footer page-footer text-center block third">
+      <footer className="footer page-footer text-center block third">
         <br />
-        <div class="bottom-nav">
+        <div className="bottom-nav">
           {currentUser && (
             <>
               <div>

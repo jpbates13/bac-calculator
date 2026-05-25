@@ -1,38 +1,44 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { getDoc, doc } from "firebase/firestore";
+import { collection, query, getDocs } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import db from "../../firebase";
 import "../../App.scss";
 import HeatMap from "../HeatMap";
+import { format } from "date-fns";
 
 function PastDrinks() {
   const [drinks, setDrinks] = useState([]);
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
   const [drinksByDate, setDrinksByDate] = useState({});
   const [displayDays, setDisplayDays] = useState(200);
   const [totalDrinks, setTotalDrinks] = useState(0);
 
   useEffect(() => {
-    const docRef = doc(db, "drinkCollection", currentUser.uid);
-    getDoc(docRef).then((result) => {
-      if (result.exists()) {
-        let previousDrinksData = result.data().previousDrinks;
-        let currentDrinksData = result.data().currentDrinks;
-        setDrinks([...previousDrinksData, ...currentDrinksData]);
-      } else {
-        // doc.data() will be undefined in this case
-        console.log("No such document!");
+    const fetchDrinks = async () => {
+      if (currentUser) {
+        const drinksRef = collection(db, "userCollection", currentUser.uid, "drinks");
+        const q = query(drinksRef);
+        const snapshot = await getDocs(q);
+        
+        const allDrinks = [];
+        snapshot.forEach((doc) => {
+          allDrinks.push(doc.data().timestamp);
+        });
+        
+        setDrinks(allDrinks);
       }
-    });
-  }, []);
+    };
+    
+    fetchDrinks();
+  }, [currentUser]);
 
   useEffect(() => {
     let newDrinksByDate = {};
     drinks.forEach((drink) => {
       let drinkDate = new Date(drink);
-      let drinkDateKey = drinkDate.toLocaleString().split(",")[0];
-      console.log(drinkDateKey);
+      let drinkDateKey = format(drinkDate, 'yyyy-MM-dd');
+      
       if (drinkDateKey in newDrinksByDate) {
         newDrinksByDate[drinkDateKey] += 1;
       } else {
@@ -54,22 +60,28 @@ function PastDrinks() {
           min="1"
           max="365"
           onChange={(e) => {
-            if (displayDays <= 365) {
-              setDisplayDays(e.target.value);
+            const val = parseInt(e.target.value);
+            if (isNaN(val) || val < 1) {
+              setDisplayDays('');
+            } else if (val <= 365) {
+              setDisplayDays(val);
             } else {
               setDisplayDays(365);
             }
+          }}
+          onBlur={(e) => {
+            if (!displayDays || displayDays < 1) setDisplayDays(1);
           }}
         />{" "}
         previous days.
       </p>
       <p>
         Total drinks in this period: {totalDrinks} (
-        {(totalDrinks / displayDays).toFixed(2)} per day)
+        {(totalDrinks / (displayDays || 1)).toFixed(2)} per day)
       </p>
       <HeatMap
         data={drinksByDate}
-        displayDays={displayDays}
+        displayDays={displayDays || 1}
         setTotalDrinks={setTotalDrinks}
       />
     </div>
