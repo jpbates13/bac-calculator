@@ -161,16 +161,29 @@ function BACCalc() {
 
     const bodyWeight = userData.bodyWeight * 453.592;
     const distributionRatio = userData.sex == "male" ? 0.68 : 0.55;
+    const alcoholGrams = 14;
+    const bacPerDrink = (alcoholGrams / (bodyWeight * distributionRatio)) * 100;
 
     let newBac = 0;
-    for (let i = 0; i < drinkArr.length; i++) {
-      const drinkTime = drinkArr[i];
-      const hoursSince = Math.floor((new Date() - drinkTime) / 1000) / 60 / 60;
-      const alcoholGrams = 14;
-      newBac +=
-        (alcoholGrams / (bodyWeight * distributionRatio)) * 100 -
-        0.015 * hoursSince;
+    const sortedDrinks = [...drinkArr].sort((a, b) => a - b);
+    let lastTime = sortedDrinks[0];
+
+    for (let i = 0; i < sortedDrinks.length; i++) {
+      const drinkTime = sortedDrinks[i];
+      const hoursSinceLast = (drinkTime - lastTime) / (1000 * 60 * 60);
+      
+      // Metabolize alcohol since the last calculation
+      newBac = Math.max(0, newBac - 0.015 * hoursSinceLast);
+      
+      // Add the new drink
+      newBac += bacPerDrink;
+      
+      lastTime = drinkTime;
     }
+
+    // Metabolize alcohol since the very last drink to the current time
+    const hoursSinceLastDrink = (new Date() - lastTime) / (1000 * 60 * 60);
+    newBac = Math.max(0, newBac - 0.015 * hoursSinceLastDrink);
 
     setBac(newBac);
 
