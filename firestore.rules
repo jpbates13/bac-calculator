@@ -2,19 +2,35 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // User Collection: Users can only read and write their own document
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/userCollection/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // User Collection
     match /userCollection/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth != null && (
+        (request.auth.uid == userId && !("isAdmin" in request.resource.data)) || isAdmin()
+      );
+      allow update: if request.auth != null && (
+        (request.auth.uid == userId && (!("isAdmin" in request.resource.data) || request.resource.data.isAdmin == resource.data.isAdmin)) || isAdmin()
+      );
+      allow delete: if request.auth != null && (request.auth.uid == userId || isAdmin());
       
       // Drinks Subcollection: Users can only read and write their own drinks
       match /drinks/{drinkId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
       }
     }
     
-    // Legacy Drink Collection (for migrations)
+    // Legacy support for older structure just in case
     match /drinkCollection/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+    // Global Drink Directory: Anyone can read, only admins can write
+    match /drinkDirectory/{drinkId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
     }
   }
 }

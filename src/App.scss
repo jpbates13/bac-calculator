@@ -1,15 +1,15 @@
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap");
 
 :root {
-  --primary-color: #6366f1;
-  --primary-hover: #4f46e5;
-  --bg-color: #0f172a;
-  --card-bg: rgba(30, 41, 59, 0.7);
+  --primary-color: #f59e0b;
+  --primary-hover: #d97706;
+  --bg-color: #2b1100; /* Dark amber/brown glass */
+  --card-bg: rgba(20, 8, 0, 0.6); /* Translucent dark amber */
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --text-secondary: #cbd5e1;
   --danger: #ef4444;
   --success: #10b981;
-  --border: rgba(255, 255, 255, 0.1);
+  --border: rgba(245, 158, 11, 0.15);
 }
 
 * {
@@ -18,12 +18,13 @@
 }
 
 body {
-  background-color: var(--bg-color);
   color: var(--text-primary);
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  background-image: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+  position: relative;
+  overflow-x: hidden;
+  /* Background is now handled by BeerBubbles.js */
 }
 
 p {
@@ -87,7 +88,7 @@ input:focus {
 }
 
 .BacCalc {
-  padding: 2rem;
+  padding: 1rem; /* Reduced for mobile */
   border-radius: 24px;
   background: var(--card-bg);
   backdrop-filter: blur(16px);
@@ -95,23 +96,31 @@ input:focus {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   width: 95%;
   max-width: 800px;
-  margin: 2rem auto;
+  margin: 1rem auto; /* Reduced for mobile */
   color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .BacCalc {
+    padding: 2rem;
+    margin: 2rem auto;
+  }
 }
 
 .textStats {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  align-items: stretch;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 @media (min-width: 768px) {
   .textStats {
-    flex-direction: row;
-    gap: 4rem;
+    gap: 3rem;
+    margin-bottom: 2rem;
   }
 }
 
@@ -120,12 +129,24 @@ input:focus {
   flex-direction: column;
   align-items: center;
   background: rgba(0, 0, 0, 0.2);
-  padding: 2rem;
+  padding: 1rem;
   border-radius: 20px;
   border: 1px solid var(--border);
   width: 100%;
   max-width: 300px;
+  flex: 1 1 40%;
   transition: transform 0.3s ease;
+}
+
+.textStat:first-child {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .textStat {
+    padding: 2rem;
+  }
 }
 
 .textStat:hover {
@@ -166,12 +187,18 @@ input:focus {
 }
 
 .drinks {
-  font-size: 4em;
+  font-size: 3em; /* Reduced for mobile */
   font-weight: 700;
   color: var(--text-primary);
-  background: -webkit-linear-gradient(45deg, #818cf8, #c084fc);
+  background: -webkit-linear-gradient(45deg, #fcd34d, #f59e0b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+@media (min-width: 768px) {
+  .drinks {
+    font-size: 4em;
+  }
 }
 
 .bacLabel {
@@ -220,9 +247,10 @@ input:focus {
 
 #canvas-container {
   height: 40vh;
+  min-height: 220px;
   width: 100%;
   position: relative;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 /* Modal styling */

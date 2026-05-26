@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { collection, query, getDocs } from "firebase/firestore";
+import { collection, query, getDocs, where } from "firebase/firestore";
 import { useAuth } from "../../contexts/AuthContext";
 import db from "../../firebase";
 import "../../App.scss";
@@ -17,8 +17,11 @@ function PastDrinks() {
   useEffect(() => {
     const fetchDrinks = async () => {
       if (currentUser) {
+        const daysToFetch = Math.min(displayDays || 1, 365);
+        const cutoffTime = Date.now() - (daysToFetch * 24 * 60 * 60 * 1000);
+        
         const drinksRef = collection(db, "userCollection", currentUser.uid, "drinks");
-        const q = query(drinksRef);
+        const q = query(drinksRef, where("timestamp", ">=", cutoffTime));
         const snapshot = await getDocs(q);
         
         const allDrinks = [];
@@ -31,7 +34,7 @@ function PastDrinks() {
     };
     
     fetchDrinks();
-  }, [currentUser]);
+  }, [currentUser, displayDays]);
 
   useEffect(() => {
     let newDrinksByDate = {};

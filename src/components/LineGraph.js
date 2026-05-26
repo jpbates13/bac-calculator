@@ -21,7 +21,7 @@ const CustomTooltip = ({ active, payload }) => {
       <div 
         className="custom-tooltip" 
         style={{
-          background: 'rgba(30, 41, 59, 0.85)',
+          background: 'var(--card-bg)',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           padding: '12px 16px',
@@ -59,15 +59,15 @@ export default function LineGraph({ bacData }) {
           data={bacData}
           margin={{
             top: 20,
-            right: 10,
-            left: -20,
-            bottom: 0,
+            right: 15,
+            left: 0,
+            bottom: 5,
           }}
         >
           <defs>
             <linearGradient id="colorBac" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-              <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
@@ -77,17 +77,19 @@ export default function LineGraph({ bacData }) {
             stroke="rgba(255,255,255,0.3)"
             tick={{ fill: '#94a3b8', fontSize: 12 }}
             minTickGap={20}
+            height={30}
           />
           <YAxis 
             stroke="rgba(255,255,255,0.3)"
             tick={{ fill: '#94a3b8', fontSize: 12 }}
             tickFormatter={(value) => value.toFixed(3)}
+            width={50}
           />
           <Tooltip content={<CustomTooltip />} />
           <Area
             type="monotone"
             dataKey="y"
-            stroke="#6366f1"
+            stroke="#f59e0b"
             strokeWidth={3}
             fillOpacity={1}
             fill="url(#colorBac)"

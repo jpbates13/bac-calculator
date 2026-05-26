@@ -6,20 +6,38 @@ const Overlay = styled(motion.div)`
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.3);
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  box-sizing: border-box;
 `;
 const ModalContainer = styled(motion.div)`
-  width: 75%;
-  height: 65%;
-  background-color: white;
-  position: absolute;
-  padding: 5%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -75%);
-  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--card-bg, rgba(20, 8, 0, 0.8));
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  position: relative;
+  padding: 2rem 1.5rem 1.5rem;
+  border-radius: 16px;
+  color: white;
+  box-sizing: border-box;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
 `;
 const CloseButton = styled.svg`
   width: 20px;
@@ -36,9 +54,9 @@ const modalVariant = {
   exit: { opacity: 0 }
 };
 const containerVariant = {
-  initial: { top: "-50%", transition: { type: "spring" } },
-  isOpen: { top: "50%" },
-  exit: { top: "-50%" }
+  initial: { y: "-100vh", opacity: 0, transition: { type: "spring" } },
+  isOpen: { y: 0, opacity: 1, transition: { type: "spring", bounce: 0.2 } },
+  exit: { y: "100vh", opacity: 0, transition: { duration: 0.3 } }
 };
 const Modal = ({ handleClose, children, isOpen }) => {
   return (
@@ -63,7 +81,7 @@ const Modal = ({ handleClose, children, isOpen }) => {
                 x2="1"
                 y2="1"
                 fill="none"
-                stroke="#337ab7"
+                stroke="rgba(255, 255, 255, 0.6)"
                 strokeLinecap="round"
                 strokeMiterlimit="10"
                 strokeWidth="2"
@@ -74,7 +92,7 @@ const Modal = ({ handleClose, children, isOpen }) => {
                 x2="19.39"
                 y2="1"
                 fill="none"
-                stroke="#337ab7"
+                stroke="rgba(255, 255, 255, 0.6)"
                 strokeLinecap="round"
                 strokeMiterlimit="10"
                 strokeWidth="2"
